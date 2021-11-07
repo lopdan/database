@@ -1,12 +1,12 @@
 set(sources
+    src/compiler.c
 )
 
 set(exe_sources
-		core/src/main.c
+		src/main.c
 		${sources}
 )
 
 set(headers
-    core/include/bus.h
-    core/include/cpu.h
+    include/compiler.h
 )
