@@ -7,6 +7,7 @@
 #define COLUMN_USERNAME_SIZE 32
 #define COLUMN_EMAIL_SIZE 255
 #define size_of_attribute(Struct, Attribute) sizeof(((Struct*)0)->Attribute)
+#define TABLE_MAX_PAGES 100
 
 // Enumeration structs
 typedef enum {
@@ -43,6 +44,11 @@ typedef struct {
   Row row_to_insert;
 } Statement;
 
+typedef struct {
+  uint32_t num_rows;
+  void* pages[TABLE_MAX_PAGES];
+} Table;
+
 // Read user input functions
 InputBuffer* CreateBuffer();
 void CloseBuffer(InputBuffer* input_buffer);
@@ -55,8 +61,12 @@ PrepareResult PrepareStatement(InputBuffer* input_buffer,Statement* statement);
 void ExecuteStatement(Statement* statement);
 void PrintPrompt();
 
-// Handle data functions
+// Handle row data functions
 void SerializeRow(Row* source, void* destination);
 void DeserializeRow(void* source, Row* destination);
+
+// Handle column data functions
+Table* CreateTable();
+void DeleteTable(Table* table);
 
 #endif
