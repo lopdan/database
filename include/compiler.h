@@ -26,6 +26,11 @@ typedef enum {
   STATEMENT_SELECT
 } StatementType;
 
+typedef enum { 
+  EXECUTE_SUCCESS, 
+  EXECUTE_TABLE_FULL 
+} ExecuteResult;
+
 // Data structs 
 typedef struct {
   char* buffer;
@@ -58,12 +63,16 @@ void CloseInputBuffer(InputBuffer* input_buffer);
 // Interpret user input functions
 MetaCommandResult ExecuteMetaCommand(InputBuffer* input_buffer);
 PrepareResult PrepareStatement(InputBuffer* input_buffer,Statement* statement);
-void ExecuteStatement(Statement* statement);
+ExecuteResult ExecuteSelect(Statement* statement, Table* table);
+ExecuteResult ExecuteInsert(Statement* statement, Table* table);
+ExecuteResult ExecuteStatement(Statement* statement, Table* table);
 void PrintPrompt();
+void PrintRow(Row* row); 
 
 // Handle row data functions
 void SerializeRow(Row* source, void* destination);
 void DeserializeRow(void* source, Row* destination);
+void* StoreRow(Table* table, uint32_t row_num);
 
 // Handle column data functions
 Table* CreateTable();

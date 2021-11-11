@@ -46,7 +46,7 @@ PrepareResult PrepareStatement(InputBuffer* input_buffer,Statement* statement) {
   if (strncmp(input_buffer->buffer, "insert", 6) == 0) {
     statement->type = STATEMENT_INSERT;
     int args_assigned = sscanf(input_buffer->buffer, "insert %s %s %s",
-                               statement->row_to_insert.id,
+                               &(statement->row_to_insert.id),
                                statement->row_to_insert.username,
                                statement->row_to_insert.email);
     if (args_assigned < 3) {
@@ -61,20 +61,44 @@ PrepareResult PrepareStatement(InputBuffer* input_buffer,Statement* statement) {
   return PREPARE_UNRECOGNIZED_STATEMENT;
 }
 
+/** Read row data from table */
+ExecuteResult ExecuteSelect(Statement* statement, Table* table) {
+  Row row;
+  for (uint32_t i = 0; i < table->num_rows; i++) {
+    // Inserts block data into row structure
+    DeserializeRow(StoreRow(table, i), &row);
+    PrintRow(&row);
+  }
+  return EXECUTE_SUCCESS;
+}
+
+/** Inserts row into table */
+ExecuteResult ExecuteInsert(Statement* statement, Table* table) {
+  // In case the table is full return an error
+  if (table->num_rows >= TABLE_MAX_ROWS) {
+    return EXECUTE_TABLE_FULL;
+  }
+  Row* row_to_insert = &(statement->row_to_insert);
+  SerializeRow(row_to_insert, StoreRow(table, table->num_rows));
+  table->num_rows += 1;
+  return EXECUTE_SUCCESS;
+} 
+
 /** Handle the SQL commands queries */
-void ExecuteStatement(Statement* statement) {
+ExecuteResult ExecuteStatement(Statement* statement, Table* table) {
   switch (statement->type) {
     case (STATEMENT_INSERT):
-      printf("Insert Statement.\n");
-      break;
+      return ExecuteInsert(statement, table);
     case (STATEMENT_SELECT):
-      printf("Select Statement.\n");
-      break;
+      return ExecuteSelect(statement, table);
   }
 }
 
 /** Command Prompt input line. */
 void PrintPrompt() { printf("Database > "); }
+
+/** Command Prompt read row */
+void PrintRow(Row* row) { printf("(%d, %s, %s)\n", row->id, row->username, row->email); }
 
 /** Gets the user input. */
 void ReadInput(InputBuffer* input_buffer) {
