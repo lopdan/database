@@ -25,7 +25,8 @@ typedef enum {
 typedef enum { 
   PREPARE_SUCCESS, 
   PREPARE_UNRECOGNIZED_STATEMENT,
-  PREPARE_SYNTAX_ERROR 
+  PREPARE_SYNTAX_ERROR,
+  PREPARE_STRING_TOO_LONG 
 } PrepareResult;
 
 /**
@@ -89,6 +90,10 @@ void CloseInputBuffer(InputBuffer* input_buffer);
 MetaCommandResult ExecuteMetaCommand(InputBuffer* input_buffer);
 PrepareResult PrepareStatement(InputBuffer* input_buffer,Statement* statement);
 ExecuteResult ExecuteSelect(Statement* statement, Table* table);
+/**
+ * Checks if the SQL insert command wont overflow the row limit size.
+ */
+PrepareResult PrepareInsert(InputBuffer* input_buffer, Statement* statement);
 ExecuteResult ExecuteInsert(Statement* statement, Table* table);
 ExecuteResult ExecuteStatement(Statement* statement, Table* table);
 void PrintPrompt();
