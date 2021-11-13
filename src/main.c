@@ -2,7 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/compiler.h"
+#include "../include/tokenizer.h"
+#include "../include/parser.h"
 
 int main(int argc, char* argv[]) {
   Table* table = CreateTable();

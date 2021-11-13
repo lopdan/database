@@ -1,5 +1,6 @@
 set(sources
-    src/compiler.c
+    src/parser.c
+    src/tokenizer.c
 )
 
 set(exe_sources
@@ -8,5 +9,6 @@ set(exe_sources
 )
 
 set(headers
-    include/compiler.h
+    include/parser.h
+    include/tokenizer.h
 )
