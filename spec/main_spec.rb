@@ -63,4 +63,17 @@ describe 'Database' do
       "Database > ",
     ])
   end
+  it 'Error when ID number is not positive' do
+    script = [
+      "insert -1 firstuser firstuser@example.com",
+      "select",
+      ".exit",
+    ]
+    result = run_script(script)
+    expect(result).to match_array([
+      "Database > ID must be a positive number.",
+      "Database > Executed.",
+      "Database > ",
+    ])
+  end
 end

@@ -30,6 +30,9 @@ int main(int argc, char* argv[]) {
       case (PREPARE_STRING_TOO_LONG):
         printf("String is too long.\n");
         continue;
+      case (PREPARE_NEGATIVE_ID):
+        printf("ID must be a positive number.\n");
+        continue;
       case (PREPARE_SYNTAX_ERROR):
         printf("Syntax error. Statement could not be parsed.\n");
         continue;
