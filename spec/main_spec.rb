@@ -1,7 +1,10 @@
 describe 'Database' do
+  before do
+    `rm -rf test.db`
+  end
   def run_script(commands)
     raw_output = nil
-    IO.popen("./main.exe", "r+") do |pipe|
+    IO.popen("./main.exe test.db", "r+") do |pipe|
       commands.each do |command|
         pipe.puts command
       end
@@ -73,6 +76,25 @@ describe 'Database' do
     expect(result).to match_array([
       "Database > ID must be a positive number.",
       "Database > Executed.",
+      "Database > ",
+    ])
+  end
+  it 'Data persistence in database' do
+    result1 = run_script([
+      "insert 1 firstuser firstuser@example.com",
+      ".exit",
+    ])
+    expect(result1).to match_array([
+      "Database > Executed.",
+      "Database > ",
+    ])
+    result2 = run_script([
+      "select",
+      ".exit",
+    ])
+    expect(result2).to match_array([
+      "Database > (1, firstuser, firstuser@example.com)",
+      "Executed.",
       "Database > ",
     ])
   end
