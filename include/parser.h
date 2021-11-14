@@ -66,20 +66,28 @@ typedef struct {
 } Statement;
 
 /**
+ * Memory block to store tables.
+ */
+typedef struct {
+  int file_descriptor;
+  uint32_t file_length;
+  void* pages[TABLE_MAX_PAGES];
+} Pager;
+
+/**
  * Data structure representation of a table.
  */
 typedef struct {
-  uint32_t num_rows;
+  Pager* pager;
   void* pages[TABLE_MAX_PAGES];
+  uint32_t num_rows;
 } Table;
 
 // Interpret user input functions
 MetaCommandResult ExecuteMetaCommand(InputBuffer* input_buffer);
 PrepareResult PrepareStatement(InputBuffer* input_buffer,Statement* statement);
 ExecuteResult ExecuteSelect(Statement* statement, Table* table);
-/**
- * Checks if the SQL insert command wont overflow the row limit size.
- */
+/** Checks if the SQL insert command wont overflow the row limit size.*/
 PrepareResult PrepareInsert(InputBuffer* input_buffer, Statement* statement);
 ExecuteResult ExecuteInsert(Statement* statement, Table* table);
 ExecuteResult ExecuteStatement(Statement* statement, Table* table);
@@ -90,7 +98,8 @@ void DeserializeRow(void* source, Row* destination);
 void* StoreRow(Table* table, uint32_t row_num);
 
 // Handle column data functions
-Table* CreateTable();
+Pager* OpenPager(const char* filename);
+Table* OpenDatabase();
 void DeleteTable(Table* table);
 
 // Read data

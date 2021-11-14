@@ -2,6 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include "../include/tokenizer.h"
 #include "../include/parser.h"
 
@@ -136,13 +140,43 @@ void* StoreRow(Table* table, uint32_t row_num) {
   return page + byte_offset;
 }
 
-/** Create a table */
-Table* CreateTable() {
+/** Open a database file */
+Pager* OpenPager(const char* filename) {
+  /**
+   * O_RDWR   -> Read/Write mode
+   * O_CREAT  -> Create file if it does not exist
+   * S_IWUSR  -> User write permission
+   * S_IRUSR  -> User read permission
+   */
+  int fd = open(filename, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR);
+  if (fd == -1) {
+    printf("Unable to open the file.\n");
+    exit(EXIT_FAILURE);
+  }
+  off_t file_length = lseek(fd, 0, SEEK_END);
+  Pager* pager = malloc(sizeof(Pager));
+  pager->file_descriptor = fd;
+  pager->file_length = file_length;
+  for (uint32_t i = 0; i < TABLE_MAX_PAGES; i++) {
+    pager->pages[i] = NULL;
+  }
+
+  return pager;
+}
+
+/** 
+ * Open connection to database (file), initializing
+ * the pager and loading all existing data.
+ */
+Table* OpenDatabase(const char* filename) {
+  Pager* pager = OpenPager(filename);
+  uint32_t num_rows = pager->file_length / ROW_SIZE;
+
   Table* table = malloc(sizeof(Table));
   table->num_rows = 0;
-  for (uint32_t i = 0; i < TABLE_MAX_PAGES; i++) {
-    table->pages[i] = NULL;
-  }
+  table->pager = pager;
+  table->num_rows = num_rows;
+
   return table;
 }
 
