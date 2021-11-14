@@ -6,7 +6,15 @@
 #include "../include/parser.h"
 
 int main(int argc, char* argv[]) {
-  Table* table = CreateTable();
+  // Specify a database name to read or create
+  if (argc < 2) {
+    printf("Must supply a database filename.\n");
+    exit(EXIT_FAILURE);
+  }
+  char* filename = argv[1];
+  Table* table = OpenDatabase(filename);
+
+  // Read input from user
   InputBuffer* input_buffer = CreateBuffer();
   while (true) {
     PrintPrompt();
@@ -14,7 +22,7 @@ int main(int argc, char* argv[]) {
     if (strcmp(input_buffer->buffer, ".exit") == 0){
       // Non SQL statements.
       if (input_buffer->buffer[0] == '.') {
-        switch (ExecuteMetaCommand(input_buffer)) {
+        switch (ExecuteMetaCommand(input_buffer, table)) {
           case (META_COMMAND_SUCCESS):
             continue;
           case (META_COMMAND_UNRECOGNIZED_COMMAND):

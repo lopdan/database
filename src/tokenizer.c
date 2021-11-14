@@ -21,7 +21,7 @@ void PrintPrompt() { printf("Database > "); }
 void ReadInput(InputBuffer* input_buffer) {
   size_t bytes_read = getline(&(input_buffer->buffer), &(input_buffer->buffer_length), stdin);
   if (bytes_read <= 0) {
-    printf("Error reading input\n");
+    printf("Error reading input.\n");
     exit(EXIT_FAILURE);
   }
   // Ignore trailing newline
