@@ -26,6 +26,9 @@ const uint32_t PAGE_SIZE = 4096;
 const uint32_t ROWS_PER_PAGE = PAGE_SIZE / ROW_SIZE;
 const uint32_t TABLE_MAX_ROWS = ROWS_PER_PAGE * TABLE_MAX_PAGES;
 
+/** Command Prompt read row */
+void PrintRow(Row* row) { printf("(%d, %s, %s)\n", row->id, row->username, row->email); }
+
 /** Handle non-sql commands. */
 MetaCommandResult ExecuteMetaCommand(InputBuffer* input_buffer, Table* table) {
   if (strcmp(input_buffer->buffer, ".exit") == 0) {
@@ -88,11 +91,14 @@ PrepareResult PrepareStatement(InputBuffer* input_buffer, Statement* statement) 
 /** Read row data from table */
 ExecuteResult ExecuteSelect(Statement* statement, Table* table) {
   Row row;
-  for (uint32_t i = 0; i < table->num_rows; i++) {
+  Cursor* cursor = TableStartCursor(table);
+  while (!(cursor->end_of_table)) {
     // Inserts block data into row structure
-    DeserializeRow(StoreRow(table, i), &row);
+    DeserializeRow(CursorValue(cursor), &row);
     PrintRow(&row);
+    AdvanceCursor(cursor);
   }
+  free(cursor);
   return EXECUTE_SUCCESS;
 }
 
@@ -103,7 +109,8 @@ ExecuteResult ExecuteInsert(Statement* statement, Table* table) {
     return EXECUTE_TABLE_FULL;
   }
   Row* row_to_insert = &(statement->row_to_insert);
-  SerializeRow(row_to_insert, StoreRow(table, table->num_rows));
+  Cursor* cursor = TableEndCursor(table);
+  SerializeRow(row_to_insert, CursorValue(cursor));
   table->num_rows += 1;
   return EXECUTE_SUCCESS;
 } 
@@ -162,9 +169,10 @@ void* GetPage(Pager* pager, uint32_t page_num) {
 }
 
 /** Store row in table */
-void* StoreRow(Table* table, uint32_t row_num) {
+void* CursorValue(Cursor* cursor) {
+  uint32_t row_num = cursor->row_num;
   uint32_t page_num = row_num / ROWS_PER_PAGE;
-  void *page = GetPage(table->pager, page_num);
+  void *page = GetPage(cursor->table->pager, page_num);
   uint32_t row_offset = row_num % ROWS_PER_PAGE;
   uint32_t byte_offset = row_offset * ROW_SIZE;
   return page + byte_offset;
@@ -267,5 +275,28 @@ void CloseDatabase(Table* table) {
   free(table);
 }
 
-/** Command Prompt read row */
-void PrintRow(Row* row) { printf("(%d, %s, %s)\n", row->id, row->username, row->email); }
+/** Cursor at the beginning of a table */
+Cursor* TableStartCursor(Table* table) {
+  Cursor* cursor = malloc(sizeof(Cursor));
+  cursor->table = table;
+  cursor->row_num = 0;
+  cursor->end_of_table = (table->num_rows == 0);
+  return cursor;
+}
+
+/** Cursor at the end of a table */
+Cursor* TableEndCursor(Table* table) {
+  Cursor* cursor = malloc(sizeof(Cursor));
+  cursor->table = table;
+  cursor->row_num = table->num_rows;
+  cursor->end_of_table = true;
+  return cursor;
+}
+
+/** Advance the cursor through the table */
+void AdvanceCursor(Cursor* cursor) {
+  cursor->row_num += 1;
+  if (cursor->row_num >= cursor->table->num_rows) {
+    cursor->end_of_table = true;
+  }
+}

@@ -82,6 +82,15 @@ typedef struct {
   uint32_t num_rows;
 } Table;
 
+/**
+ * Represents the location in the table
+ */
+typedef struct {
+  Table* table;
+  uint32_t row_num;
+  bool end_of_table;
+} Cursor;
+
 // Interpret user input functions
 MetaCommandResult ExecuteMetaCommand(InputBuffer* input_buffer, Table* table);
 PrepareResult PrepareStatement(InputBuffer* input_buffer,Statement* statement);
@@ -94,7 +103,7 @@ ExecuteResult ExecuteStatement(Statement* statement, Table* table);
 // Handle row data functions
 void SerializeRow(Row* source, void* destination);
 void DeserializeRow(void* source, Row* destination);
-void* StoreRow(Table* table, uint32_t row_num);
+void* CursorValue(Cursor* cursor);
 
 // Handle column data functions
 void* GetPage(Pager* pager, uint32_t page_num);
@@ -102,6 +111,9 @@ Pager* OpenPager(const char* filename);
 void FlushPager(Pager* pager, uint32_t page_num, uint32_t size);
 Table* OpenDatabase(const char* filename);
 void CloseDatabase(Table* table);
+Cursor* TableEndCursor(Table* table);
+Cursor* TableStartCursor(Table* table);
+void AdvanceCursor(Cursor* cursor);
 
 // Read data
 void PrintRow(Row* row); 
