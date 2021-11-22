@@ -88,6 +88,16 @@ PrepareResult PrepareStatement(InputBuffer* input_buffer, Statement* statement) 
   return PREPARE_UNRECOGNIZED_STATEMENT;
 } 
 
+/** Handle the SQL commands queries */
+ExecuteResult ExecuteStatement(Statement* statement, Table* table) {
+  switch (statement->type) {
+    case (STATEMENT_INSERT):
+      return ExecuteInsert(statement, table);
+    case (STATEMENT_SELECT):
+      return ExecuteSelect(statement, table);
+  }
+}
+
 /** Read row data from table */
 ExecuteResult ExecuteSelect(Statement* statement, Table* table) {
   Row row;
@@ -115,16 +125,6 @@ ExecuteResult ExecuteInsert(Statement* statement, Table* table) {
   return EXECUTE_SUCCESS;
 } 
 
-/** Handle the SQL commands queries */
-ExecuteResult ExecuteStatement(Statement* statement, Table* table) {
-  switch (statement->type) {
-    case (STATEMENT_INSERT):
-      return ExecuteInsert(statement, table);
-    case (STATEMENT_SELECT):
-      return ExecuteSelect(statement, table);
-  }
-}
-
 /** Store data row in block of memory */
 void SerializeRow(Row* source, void* destination) {
   memcpy(destination + ID_OFFSET, &(source->id), ID_SIZE);
@@ -137,35 +137,6 @@ void DeserializeRow(void* source, Row* destination) {
   memcpy(&(destination->id), source + ID_OFFSET, ID_SIZE);
   memcpy(&(destination->username), source + USERNAME_OFFSET, USERNAME_SIZE);
   memcpy(&(destination->email), source + EMAIL_OFFSET, EMAIL_SIZE);
-}
-
-/** Gets the page address from the file */
-void* GetPage(Pager* pager, uint32_t page_num) {
-  if (page_num > TABLE_MAX_PAGES) {
-    printf("Tried to fetch page number out of bounds. %d > %d\n", page_num,
-    TABLE_MAX_PAGES);
-    exit(EXIT_FAILURE);
-  }
-  if (pager->pages[page_num] == NULL) {
-    // Cache miss. Allocate memory and load from file.
-    void* page = malloc(PAGE_SIZE);
-    uint32_t num_pages = pager->file_length / PAGE_SIZE;
-    // We might save a partial page at the end of the file
-    if (pager->file_length % PAGE_SIZE) {
-      num_pages += 1;
-    }
-
-    if (page_num <= num_pages) {
-      lseek(pager->file_descriptor, page_num * PAGE_SIZE, SEEK_SET);
-      ssize_t bytes_read = read(pager->file_descriptor, page, PAGE_SIZE);
-      if (bytes_read == -1) {
-        printf("Error reading file: %d\n", errno);
-        exit(EXIT_FAILURE);
-      }
-    }
-    pager->pages[page_num] = page;
-  }
-  return pager->pages[page_num];
 }
 
 /** Store row in table */
@@ -201,20 +172,6 @@ Pager* OpenPager(const char* filename) {
   return pager;
 }
 
-/** 
- * Open connection to database (file), initializing
- * the pager and loading all existing data.
- */
-Table* OpenDatabase(const char* filename) {
-  Pager* pager = OpenPager(filename);
-  uint32_t num_rows = pager->file_length / ROW_SIZE;
-  Table* table = malloc(sizeof(Table));
-  table->pager = pager;
-  table->num_rows = num_rows;
-
-  return table;
-}
-
 /** Sync the temporary state with the permanent state of the data on disk */
 void FlushPager(Pager* pager, uint32_t page_num, uint32_t size) {
   if (pager->pages[page_num] == NULL) {
@@ -231,6 +188,49 @@ void FlushPager(Pager* pager, uint32_t page_num, uint32_t size) {
     printf("Error writing: %d\n", errno);
     exit(EXIT_FAILURE);
   }
+}
+
+/** Gets the page address from the file */
+void* GetPage(Pager* pager, uint32_t page_num) {
+  if (page_num > TABLE_MAX_PAGES) {
+    printf("Tried to fetch page number out of bounds. %d > %d\n", page_num,
+    TABLE_MAX_PAGES);
+    exit(EXIT_FAILURE);
+  }
+  if (pager->pages[page_num] == NULL) {
+    // Cache miss. Allocate memory and load from file.
+    void* page = malloc(PAGE_SIZE);
+    uint32_t num_pages = pager->file_length / PAGE_SIZE;
+    // We might save a partial page at the end of the file
+    if (pager->file_length % PAGE_SIZE) {
+      num_pages += 1;
+    }
+
+    if (page_num <= num_pages) {
+      lseek(pager->file_descriptor, page_num * PAGE_SIZE, SEEK_SET);
+      ssize_t bytes_read = read(pager->file_descriptor, page, PAGE_SIZE);
+      if (bytes_read == -1) {
+        printf("Error reading file: %d\n", errno);
+        exit(EXIT_FAILURE);
+      }
+    }
+    pager->pages[page_num] = page;
+  }
+  return pager->pages[page_num];
+}
+
+/** 
+ * Open connection to database (file), initializing
+ * the pager and loading all existing data.
+ */
+Table* OpenDatabase(const char* filename) {
+  Pager* pager = OpenPager(filename);
+  uint32_t num_rows = pager->file_length / ROW_SIZE;
+  Table* table = malloc(sizeof(Table));
+  table->pager = pager;
+  table->num_rows = num_rows;
+
+  return table;
 }
 
 /** Release the table from memory */
