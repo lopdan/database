@@ -1,5 +1,5 @@
-main.exe: main.o parser.o tokenizer.o
-	gcc src/main.o src/parser.o src/tokenizer.o -o main.exe
+database: main.o parser.o tokenizer.o
+	gcc src/main.o src/parser.o src/tokenizer.o -o database
 
 main.o: src/main.c
 	gcc -c src/main.c -o src/main.o

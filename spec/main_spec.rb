@@ -4,7 +4,7 @@ describe 'Database' do
   end
   def run_script(commands)
     raw_output = nil
-    IO.popen("./main.exe test.db", "r+") do |pipe|
+    IO.popen("./database test.db", "r+") do |pipe|
       commands.each do |command|
         pipe.puts command
       end
