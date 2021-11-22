@@ -53,3 +53,7 @@ _deps
 
 ### Visual Studio Code Files ###
 .vscode
+
+## Doxygen docs
+html
+latex
