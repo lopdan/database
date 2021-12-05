@@ -14,7 +14,7 @@ Run the database after creating the executable:
 ```
 ./database test.db
 ```
-After running the program, you have availiable the insert and select commands:
+After running the program, you have available the insert and select commands:
 ```
 ./database test.db
 Database > insert 1 test test@user.com
